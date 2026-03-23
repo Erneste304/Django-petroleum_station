@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Share Transaction Requests - Petroleum Station{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 mb-1 text-white fw-bold">Share Operations</h2>
+        <p class="text-white-50 small mb-0">Monitor and approve partner investment transactions.</p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if request.user.is_admin or request.user.role == 'staff' %}
+        <a href="{% url 'users:share_config_update' %}" class="btn btn-outline-info">
+            <i class="bi bi-gear me-2"></i>Market Settings
+        </a>
+        <a href="{% url 'users:partner_share_list' %}" class="btn btn-glass">
+            <i class="bi bi-people me-2"></i>Partner Holdings
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card glass-card border-0 shadow-lg">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-4 py-3 text-white-50 small text-uppercase">Partner</th>
+                        <th class="py-3 text-white-50 small text-uppercase">Type</th>
+                        <th class="py-3 text-white-50 small text-uppercase">Shares</th>
+                        <th class="py-3 text-white-50 small text-uppercase">Total (RWF)</th>
+                        <th class="py-3 text-white-50 small text-uppercase">Status</th>
+                        <th class="py-3 text-white-50 small text-uppercase">Time</th>
+                        <th class="text-end pe-4 py-3 text-white-50 small text-uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trans in transactions %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td class="ps-4">
+                            <span class="fw-bold text-white">{{ trans.partner.username }}</span>
+                            <div class="x-small text-white-50">By: {{ trans.recorded_by.username }}</div>
+                        </td>
+                        <td>
+                            <span class="badge {% if trans.transaction_type == 'buy' %}bg-info-subtle text-info{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-3 py-2 x-small fw-bold">
+                                {{ trans.get_transaction_type_display|upper }}
+                            </span>
+                        </td>
+                        <td class="fw-bold">{{ trans.amount_shares }}</td>
+                        <td class="text-white-50 fw-medium">{{ trans.total_amount }}</td>
+                        <td>
+                            {% if trans.status == 'pending' %}
+                                <span class="badge bg-warning text-dark rounded-pill px-3 py-2 x-small f-bold">
+                                    <i class="bi bi-hourglass-split me-1"></i>PENDING
+                                </span>
+                            {% elif trans.status == 'accountant_approved' %}
+                                <span class="badge bg-info text-dark rounded-pill px-3 py-2 x-small f-bold">
+                                    <i class="bi bi-check2-circle me-1"></i>VERIFIED
+                                </span>
+                            {% elif trans.status == 'approved' %}
+                                <span class="badge bg-success rounded-pill px-3 py-2 x-small f-bold">
+                                    <i class="bi bi-check-all me-1"></i>EXECUTED
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger rounded-pill px-3 py-2 x-small f-bold">
+                                    <i class="bi bi-x-circle me-1"></i>REJECTED
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-white-50 x-small">{{ trans.timestamp|date:"M d, H:i" }}</td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                {% if trans.status == 'pending' %}
+                                    {% if request.user.role == 'accountant' or request.user.is_admin %}
+                                        <a href="{% url 'users:share_accountant_approve' trans.pk %}" class="btn btn-sm btn-info text-dark fw-bold px-3">Verify</a>
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if trans.status == 'accountant_approved' and request.user.is_admin %}
+                                    <a href="{% url 'users:share_admin_approve' trans.pk %}" class="btn btn-sm btn-success fw-bold px-3">Execute</a>
+                                {% endif %}
+
+                                {% if trans.status in 'pending,accountant_approved' %}
+                                    {% if request.user.is_admin or request.user.role == 'accountant' %}
+                                        <a href="{% url 'users:share_reject' trans.pk %}" class="btn btn-sm btn-outline-danger px-3">Reject</a>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <i class="bi bi-layers text-white-50 fs-2 d-block mb-3 opacity-25"></i>
+                            <div class="text-white-50 small">No share transaction requests currently active.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

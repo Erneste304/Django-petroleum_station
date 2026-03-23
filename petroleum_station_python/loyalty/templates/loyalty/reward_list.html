@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Loyalty Rewards - Petroleum Station{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h1 class="fw-bold">Loyalty Program</h1>
+        <p class="text-white-50">Track customer rewards and redemptions.</p>
+    </div>
+    <a href="{% url 'loyalty:reward_create' %}" class="btn btn-glass"><i class="bi bi-gift me-2"></i> Add Reward</a>
+</div>
+
+<div class="row g-4 mb-5">
+    {% for reward in rewards %}
+    <div class="col-md-4">
+        <div class="glass-card p-4 h-100">
+            <h5 class="mb-3">{{ reward.name }}</h5>
+            <p class="text-white-50 small mb-4">{{ reward.description }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="badge bg-info p-2">{{ reward.points_cost }} Points</span>
+                <button class="btn btn-sm btn-glass">Redeem</button>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 glass-card">
+        <p class="text-white-50">No rewards configured.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="glass-card p-4">
+    <h4 class="mb-4">Recent Redemptions</h4>
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Reward</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for redemption in redemptions %}
+                <tr>
+                    <td>{{ redemption.customer.name }}</td>
+                    <td>{{ redemption.reward.name }}</td>
+                    <td>{{ redemption.redeemed_date|date:"Y-m-d" }}</td>
+                    <td>
+                        <span class="badge bg-success">{{ redemption.status }}</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-white-50">No redemptions yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

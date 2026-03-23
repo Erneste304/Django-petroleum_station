@@ -1,0 +1,552 @@
+{% extends 'base.html' %}
+
+{% block title %}Partner Dashboard - Petroleum Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pulse-success {
+        animation: pulse-green 2s infinite;
+    }
+    @keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+    }
+    .pulse-danger {
+        animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    .market-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        transition: all 0.3s ease;
+    }
+    .market-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--primary-accent);
+        transform: translateY(-3px);
+    }
+    .floating-ticker {
+        position: relative;
+        overflow: hidden;
+    }
+    .x-small { font-size: 0.7rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h1 class="fw-bold">Welcome Back, <span class="text-info">{{ user.username|default:"Admin" }}</span></h1>
+        <p class="text-white-50">Here's what's happening at your stations today.</p>
+    </div>
+    <div class="d-flex gap-3 align-items-center">
+        {% if request.user.role in 'admin,accountant,staff' %}
+        <a href="{% url 'users:share_request_list' %}" class="btn btn-outline-info border-2 fw-bold px-4 py-2" style="border-radius: 12px; backdrop-filter: blur(10px);">
+            <i class="bi bi-graph-up-arrow me-2"></i> Share Operations
+        </a>
+        {% endif %}
+        <div class="glass-card p-2 px-4">
+            <i class="bi bi-calendar3 me-2"></i> <span id="current-date"></span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    {% if request.user.role in 'admin,accountant,staff,receptionist' %}
+    <div class="col-md-3">
+        <div class="glass-card stat-card">
+            <i class="bi bi-fuel-pump fs-1 text-info"></i>
+            <div class="stat-value">{{ total_sales|default:"0" }}</div>
+            <div class="text-white-50">Total Sales Record</div>
+        </div>
+    </div>
+    {% endif %}
+    {% if request.user.role in 'admin,accountant,staff,partner' %}
+    <div class="col-md-3">
+        <div class="glass-card stat-card">
+            <i class="bi bi-cash-stack fs-1 text-success"></i>
+            <div class="stat-value">{{ stations_count|default:"0" }}</div>
+            <div class="text-white-50">Active Stations</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card stat-card">
+            <i class="bi bi-people fs-1 text-warning"></i>
+            <div class="stat-value">{{ fuel_types.count|default:"0" }}</div>
+            <div class="text-white-50">Fuel Types</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card stat-card">
+            <i class="bi bi-truck fs-1 text-danger"></i>
+            <div class="stat-value">{{ tanks.count|default:"0" }}</div>
+            <div class="text-white-50">Fuel Tanks</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if request.user.role == 'customer' %}
+    <div class="col-md-4">
+        <div class="glass-card stat-card">
+            <i class="bi bi-cart-check fs-1 text-info"></i>
+            <div class="stat-value">{{ my_total_purchases|default:"0" }}</div>
+            <div class="text-white-50">My Total Purchases</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card stat-card">
+            <i class="bi bi-wallet2 fs-1 text-success"></i>
+            <div class="stat-value">{{ my_total_spent|default:"0" }} RWF</div>
+            <div class="text-white-50">Total Amount Spent</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card stat-card">
+            <i class="bi bi-gift fs-1 text-warning"></i>
+            <div class="stat-value">{{ rewards_count|default:"0" }}</div>
+            <div class="text-white-50">Available Rewards</div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    {% if request.user.role in 'admin,accountant,staff,receptionist' %}
+    <div class="col-lg-8">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Recent Sales</h4>
+                <a href="{% url 'sales:sale_list' %}" class="btn btn-sm btn-glass">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Quantity</th>
+                            <th>Total Amount</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in latest_sales %}
+                        <tr>
+                            <td>#{{ sale.sale_id }}</td>
+                            <td>{{ sale.quantity }} L</td>
+                            <td>{{ sale.total_amount }} RWF</td>
+                            <td>{{ sale.sale_date|date:"M d, H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-white-50">No recent sales found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if request.user.role in 'admin,accountant,staff,partner' %}
+    <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <h4 class="mb-4">Live Fuel Levels</h4>
+            <div class="mt-2">
+                {% for tank in tanks %}
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>{{ tank.fuel.fuel_name }}</span>
+                        <span>{{ tank.current_stock }} / {{ tank.capacity }} L</span>
+                    </div>
+                    <div class="progress bg-dark" style="height: 10px;">
+                        <div class="progress-bar {% if tank.percentage < 20 %}bg-danger{% else %}bg-info{% endif %}" style="width: {{ tank.percentage }}%"></div>
+                    </div>
+
+                </div>
+                {% empty %}
+                <p class="text-white-50">No tank data available.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div> <!-- Closes the first row -->
+
+{% if request.user.role == 'partner' %}
+<div class="row g-4 mt-2">
+    <div class="col-lg-12">
+        <div class="glass-card p-5 mb-5 floating-ticker border-0 shadow-lg" style="background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border-radius: 24px;">
+            <div class="row align-items-center mb-5">
+                <div class="col-md-7">
+                    <h2 class="mb-2 fw-bold display-6"><i class="bi bi-rocket-takeoff text-info me-3"></i>Partner Portal</h2>
+                    <p class="text-white-50 lead mb-0 opacity-75">Securely manage your assets and track company performance data in real-time.</p>
+                </div>
+                <div class="col-md-5 text-md-end mt-4 mt-md-0">
+                    <div class="d-inline-flex align-items-center bg-dark bg-opacity-50 p-3 rounded-pill border border-white border-opacity-10 shadow-lg px-4" style="backdrop-filter: blur(15px);">
+                        <div class="me-4 text-start">
+                            <div class="text-white-50 x-small text-uppercase fw-bold" style="letter-spacing: 2px;">Market Value</div>
+                            <div id="live-share-price" class="h3 mb-0 fw-bold text-success">{{ share_config.current_price }} RWF</div>
+                        </div>
+                        <div id="price-status-indicator" class="rounded-circle pulse-success mx-2" style="width: 14px; height: 14px; background: #198754;"></div>
+                        <i id="price-trend" class="bi bi-caret-up-fill text-success h2 mb-0 ms-2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-xl-4 col-md-12">
+                    <div class="market-card p-4 h-100 d-flex flex-column shadow-sm border-white border-opacity-10" style="background: rgba(255, 255, 255, 0.03); border-radius: 20px;">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div>
+                                <h6 class="text-white-50 text-uppercase small mb-2 fw-bold" style="letter-spacing: 1px;">My Investment</h6>
+                                <div class="h2 fw-bold mb-1">{{ partner_share.total_shares }} <span class="h6 fw-normal opacity-50">SHRS</span></div>
+                                <div class="text-info h5 fw-bold mt-2">≈ {{ partner_share.current_value }} RWF</div>
+                            </div>
+                            <div class="p-3 bg-info bg-opacity-10 rounded-4">
+                                <i class="bi bi-wallet2 text-info h3 mb-0"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-auto d-grid gap-3">
+                            <button class="btn btn-info btn-lg border-0 fw-bold py-3 shadow-sm hover-grow" data-bs-toggle="modal" data-bs-target="#buySharesModal">
+                                <i class="bi bi-plus-circle me-2"></i>Buy Shares
+                            </button>
+                            <button class="btn btn-outline-danger btn-lg border-2 fw-bold py-3 hover-grow" data-bs-toggle="modal" data-bs-target="#sellSharesModal">
+                                <i class="bi bi-dash-circle me-2"></i>Sell Shares
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-5 col-md-12">
+                    <div class="market-card p-4 h-100 shadow-sm border-white border-opacity-10" style="background: rgba(255, 255, 255, 0.03); border-radius: 20px;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h6 class="text-white-50 text-uppercase small mb-0 fw-bold" style="letter-spacing: 1px;">Recent Transactions</h6>
+                            <span class="badge bg-dark bg-opacity-50 text-info px-3 py-2 rounded-pill x-small fw-bold border border-info border-opacity-10">LIVE UPDATES</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0 align-middle">
+                                <thead>
+                                    <tr class="text-white-50 x-small border-0 opacity-50">
+                                        <th class="border-0 bg-transparent py-3">TYPE</th>
+                                        <th class="border-0 bg-transparent py-3 text-end">QTY</th>
+                                        <th class="border-0 bg-transparent py-3 text-end">PRICE</th>
+                                        <th class="border-0 bg-transparent py-3 text-end">TIME</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for trans in share_transactions %}
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                        <td class="border-0 bg-transparent py-3">
+                                            <span class="badge {% if trans.transaction_type == 'buy' %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-3 py-2 x-small fw-bold">
+                                                {{ trans.get_transaction_type_display|upper }}
+                                            </span>
+                                            {% if trans.status == 'pending' %}
+                                                <div class="x-small text-warning mt-1 fw-bold opacity-75"><i class="bi bi-hourglass-split"></i> Awaiting Review</div>
+                                            {% elif trans.status == 'accountant_approved' %}
+                                                <div class="x-small text-info mt-1 fw-bold opacity-75"><i class="bi bi-check2-circle"></i> Verification Complete</div>
+                                            {% elif trans.status == 'rejected' %}
+                                                <div class="x-small text-danger mt-1 fw-bold opacity-75"><i class="bi bi-x-circle"></i> Request Rejected</div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="border-0 bg-transparent text-end fw-bold">{{ trans.amount_shares }}</td>
+                                        <td class="border-0 bg-transparent text-end text-white-50 small">{{ trans.price_per_share }}</td>
+                                        <td class="border-0 bg-transparent text-end text-white-50 x-small opacity-75">{{ trans.timestamp|date:"H:i" }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-white-50 small py-5 opacity-50"><i class="bi bi-inbox fs-3 d-block mb-3"></i>No history found.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-12">
+                    <div class="market-card p-4 h-100 d-flex flex-column shadow-sm border-warning border-opacity-10" style="background: rgba(255, 193, 7, 0.02); border-radius: 20px;">
+                        <h6 class="text-white-50 text-uppercase small mb-3 fw-bold" style="letter-spacing: 1px;">Collaboration Hub</h6>
+                        <p class="small text-white-50 mb-4 opacity-75">Connect with the administration team to propose ideas for expansion or process optimization.</p>
+                        
+                        <button class="btn btn-warning w-100 py-3 mb-4 fw-bold shadow-sm text-dark hover-grow" data-bs-toggle="modal" data-bs-target="#ideaModal">
+                            <i class="bi bi-chat-dots-fill me-2"></i>Send Proposal
+                        </button>
+
+                        <div class="mt-auto p-3 bg-dark bg-opacity-40 rounded-4 small border border-white border-opacity-5">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-shield-check text-warning me-2"></i>
+                                <span class="fw-bold text-white-50 small">Governance</span>
+                            </div>
+                            <span class="text-white-50 opacity-50 x-small mt-1 d-block lh-sm">Platform secure. 0.01% commission applied to all sell orders.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals for Partner Actions -->
+<div class="modal fade" id="buySharesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-bottom border-white border-opacity-10 p-4">
+                <h5 class="modal-title fw-bold">Buy Company Shares</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'users:share_transaction' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="transaction_type" value="buy">
+                <div class="modal-body p-4">
+                    <div class="bg-info bg-opacity-10 p-3 rounded mb-4 text-center">
+                        <span class="text-white-50 small text-uppercase fw-bold opacity-75">Current Rate</span>
+                        <div class="h3 fw-bold text-info mb-0">{{ share_config.current_price }} <span class="small fw-normal">RWF</span></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white-50 small fw-bold">Shares to Purchase</label>
+                        <input type="number" name="amount_shares" id="buy_amount" class="form-control form-control-lg bg-dark text-white border-secondary shadow-none" step="0.0001" placeholder="0.0000" style="border-radius: 12px;" required>
+                    </div>
+                    <div class="bg-dark bg-opacity-40 p-3 rounded-4 border border-info border-opacity-10 mt-3 d-flex justify-content-between align-items-center">
+                        <span class="text-white-50 small">Estimated Total</span>
+                        <span class="h5 fw-bold text-info mb-0" id="buy_total">0.00 RWF</span>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-info w-100 py-3 fw-bold shadow-sm" style="border-radius: 12px;">Confirm Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="sellSharesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-bottom border-white border-opacity-10 p-4">
+                <h5 class="modal-title fw-bold">Liquidate Portfolio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'users:share_transaction' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="transaction_type" value="sell">
+                <div class="modal-body p-4">
+                    <div class="bg-danger bg-opacity-10 p-3 rounded mb-4 text-center">
+                        <span class="text-white-50 small text-uppercase fw-bold opacity-75">Estimated Yield</span>
+                        <div class="h3 fw-bold text-danger mb-0">{{ share_config.current_price }} <span class="small fw-normal">RWF</span></div>
+                        <div class="x-small text-danger opacity-75 mt-1 fw-bold">0.01% platform fee applies.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white-50 small fw-bold">Shares to Liquidate (Max: {{ partner_share.total_shares }})</label>
+                        <input type="number" name="amount_shares" id="sell_amount" class="form-control form-control-lg bg-dark text-white border-secondary shadow-none" step="0.0001" max="{{ partner_share.total_shares }}" placeholder="0.0000" style="border-radius: 12px;" required>
+                    </div>
+                    <div class="bg-dark bg-opacity-40 p-3 rounded-4 border border-danger border-opacity-10 mt-3 d-flex justify-content-between align-items-center">
+                        <span class="text-white-50 small">Estimated Payout</span>
+                        <span class="h5 fw-bold text-danger mb-0" id="sell_total">0.00 RWF</span>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-danger w-100 py-3 fw-bold shadow-sm" style="border-radius: 12px;">Confirm Liquidation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ideaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-bottom border-white border-opacity-10 p-4">
+                <h5 class="modal-title fw-bold">Strategic Proposal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'users:partner_message' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="recipient_role" value="admin">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-white-50 small fw-bold">Subject</label>
+                        <input type="text" name="subject" class="form-control bg-dark text-white border-secondary shadow-none" style="border-radius: 10px;" placeholder="What is your proposal about?" required>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label text-white-50 small fw-bold">Detailed Description</label>
+                        <textarea name="body" class="form-control bg-dark text-white border-secondary shadow-none" style="border-radius: 10px;" rows="5" placeholder="Explain your idea to the executive team..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-warning w-100 py-3 fw-bold text-dark shadow-sm" style="border-radius: 12px;">Submit Proposal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+    {% if request.user.role == 'customer' %}
+    <div class="col-lg-12">
+        <div class="glass-card p-4 mb-4">
+            <h4 class="mb-4">Our Services</h4>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h5 class="mb-3"><i class="bi bi-droplet text-info me-2"></i>Available Services</h5>
+                    <ul class="list-group list-group-flush bg-transparent">
+                        {% for service in available_services %}
+                        <li class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">{{ service.name }}</span>
+                                <div class="small text-white-50">{{ service.description|truncatechars:50 }}</div>
+                            </div>
+                            <span class="badge bg-info text-dark">{{ service.price }} RWF</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item bg-transparent text-white-50 text-center">No services currently listed.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="mb-3"><i class="bi bi-fuel-pump text-info me-2"></i>Fuel Prices</h5>
+                    <ul class="list-group list-group-flush bg-transparent">
+                        {% for fuel in fuel_types %}
+                        <li class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">{{ fuel.fuel_name }}</span>
+                            <span class="badge bg-secondary">{{ fuel.price_per_liter }} RWF/L</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-12">
+        <div class="glass-card p-4 mb-4">
+            <h4 class="mb-4">My Recent Activity</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Recent Purchases</h5>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Quantity</th>
+                                    <th>Total Amount</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in customer_sales %}
+                                <tr>
+                                    <td>{{ sale.quantity }} L</td>
+                                    <td>{{ sale.total_amount }} RWF</td>
+                                    <td>{{ sale.sale_date|date:"M d" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-white-50">No purchases found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5>Recent Redemptions</h5>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Reward</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for redemption in customer_redemptions %}
+                                <tr>
+                                    <td>{{ redemption.reward.name }}</td>
+                                    <td><span class="badge bg-secondary">{{ redemption.status }}</span></td>
+                                    <td>{{ redemption.redeemed_date|date:"M d" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-white-50">No redemptions found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+<script>
+    document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+
+    // Simulate Live Share Price Streaming
+    const priceEl = document.getElementById('live-share-price');
+    const trendEl = document.getElementById('price-trend');
+    const indicatorEl = document.getElementById('price-status-indicator');
+    
+    if (priceEl) {
+        let currentPrice = parseFloat(priceEl.innerText);
+        
+        setInterval(() => {
+            const change = (Math.random() - 0.45) * 2; // Bias slightly upwards
+            currentPrice += change;
+            priceEl.innerText = currentPrice.toFixed(2) + ' RWF';
+            
+            if (change > 0) {
+                trendEl.className = 'bi bi-caret-up-fill text-success ms-3 h4 mb-0';
+                priceEl.className = 'h4 mb-0 fw-bold text-success';
+                indicatorEl.style.background = '#198754';
+                indicatorEl.className = 'rounded-circle pulse-success';
+            } else {
+                trendEl.className = 'bi bi-caret-down-fill text-danger ms-3 h4 mb-0';
+                priceEl.className = 'h4 mb-0 fw-bold text-danger';
+                indicatorEl.style.background = '#dc3545';
+                indicatorEl.className = 'rounded-circle pulse-danger';
+            }
+        }, 3000);
+    }
+    // Share Calculation Logic
+    const currentPrice = parseFloat("{{ share_config.current_price|default:0 }}");
+    const commissionRate = parseFloat("{{ share_config.commission_percentage|default:0 }}");
+
+    const buyInput = document.getElementById('buy_amount');
+    const buyTotalDisplay = document.getElementById('buy_total');
+    const sellInput = document.getElementById('sell_amount');
+    const sellTotalDisplay = document.getElementById('sell_total');
+
+    if (buyInput) {
+        buyInput.addEventListener('input', function() {
+            const amount = parseFloat(this.value) || 0;
+            const total = amount * currentPrice;
+            buyTotalDisplay.textContent = total.toLocaleString() + ' RWF';
+        });
+    }
+
+    if (sellInput) {
+        sellInput.addEventListener('input', function() {
+            const amount = parseFloat(this.value) || 0;
+            const total = amount * currentPrice;
+            const commission = total * commissionRate;
+            const payout = total - commission;
+            sellTotalDisplay.textContent = payout.toLocaleString() + ' RWF';
+        });
+    }
+</script>
+{% endblock %}
+

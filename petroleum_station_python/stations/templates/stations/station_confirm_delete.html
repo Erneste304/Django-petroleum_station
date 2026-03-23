@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Station - Petroleum Station{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 text-center">
+        <div class="glass-card p-5 border-danger">
+            <i class="bi bi-exclamation-triangle fs-1 text-danger mb-4"></i>
+            <h2 class="fw-bold text-white mb-3">Confirm Deletion</h2>
+            <p class="text-white-50 mb-5">Are you sure you want to delete the station <strong>{{ station.station_name }}</strong>? This action cannot be undone.</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="submit" class="btn btn-danger px-5">Yes, Delete</button>
+                    <a href="{% url 'stations:station_list' %}" class="btn btn-outline-secondary px-5">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Reject Transaction - Petroleum Station{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card glass-card border-0 shadow-lg mt-5">
+            <div class="card-header border-bottom border-white border-opacity-10 p-4">
+                <h4 class="mb-0 fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Reject Share Transaction</h4>
+            </div>
+            <div class="card-body p-4 text-white-50">
+                <p>Are you sure you want to reject this request for <strong>{{ transaction.partner.username }}</strong>?</p>
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-4 d-flex justify-content-between">
+                    <div>
+                        <div class="x-small text-uppercase">Operation</div>
+                        <div class="text-white fw-bold">{{ transaction.get_transaction_type_display }} {{ transaction.amount_shares }} Shares</div>
+                    </div>
+                    <div>
+                        <div class="x-small text-uppercase text-end">Total Amount</div>
+                        <div class="text-white fw-bold text-end">{{ transaction.total_amount }} RWF</div>
+                    </div>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-white">Reason for Rejection</label>
+                        <textarea name="reason" class="form-control bg-dark text-white border-secondary shadow-none" rows="4" placeholder="Briefly explain why this request is being denied..." required></textarea>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <a href="{% url 'users:share_request_list' %}" class="btn btn-outline-secondary w-100 py-3 fw-bold">Cancel</a>
+                        <button type="submit" class="btn btn-danger w-100 py-3 fw-bold">Confirm Rejection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Petroleum Station{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card glass-card">
+            <div class="card-header border-bottom border-secondary p-4">
+                <h3 class="h4 mb-0 text-white">{{ title }}</h3>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-4 bg-dark bg-opacity-50 p-3 rounded">
+                    <h5 class="text-white mb-2">{{ report.title }}</h5>
+                    <p class="text-white-50 small mb-2 border-bottom border-secondary pb-2">
+                        Submitted by: {{ report.submitted_by.username }} 
+                        <span class="mx-2 text-muted">|</span> 
+                        Type: {{ report.get_report_type_display }}
+                        <span class="mx-2 text-muted">|</span> 
+                        Date: {{ report.submitted_at|date:"M d, Y" }}
+                    </p>
+                    <p class="text-white mb-0" style="white-space: pre-line;">{{ report.description }}</p>
+                </div>
+
+                <form method="post" action="{% url action_url report.pk %}">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                    <div class="mb-4">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-white-50">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <div class="invalid-feedback d-block mt-2">
+                            {{ field.errors|join:", " }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="alert alert-info bg-info bg-opacity-10 border-info text-info d-flex align-items-center mb-4">
+                        <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+                        <div>
+                            By approving this report, you are signing off on the details within it. 
+                            If this is the final financial approval, funds can be disbursed.
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-3">
+                        <a href="{% url 'users:report_list' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-check-lg me-2"></i>Approve Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

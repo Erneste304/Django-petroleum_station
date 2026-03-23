@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Car Wash - Petroleum Station{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h1 class="fw-bold">Car Wash Bookings</h1>
+        <p class="text-white-50">Manage service appointments.</p>
+    </div>
+    <a href="{% url 'services:booking_create' %}" class="btn btn-glass"><i class="bi bi-calendar-plus me-2"></i> Book Service</a>
+</div>
+
+<div class="glass-card p-4">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Vehicle Plate</th>
+                    <th>Service</th>
+                    <th>Date & Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td>#{{ booking.booking_id }}</td>
+                    <td>{{ booking.vehicle_plate }}</td>
+                    <td>{{ booking.service.name }}</td>
+                    <td>{{ booking.booking_date }} {{ booking.booking_time }}</td>
+                    <td>
+                        <span class="badge {% if booking.status == 'Completed' %}bg-success{% elif booking.status == 'Pending' %}bg-warning{% else %}bg-secondary{% endif %}">
+                            {{ booking.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info"><i class="bi bi-check-lg"></i></button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-white-50">No bookings found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

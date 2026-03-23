@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}System Reports - Petroleum Station{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h3 mb-0 text-white fw-semibold">System Reports</h2>
+    {% if request.user.role == 'staff' or request.user.role == 'accountant' %}
+    <a href="{% url 'users:report_create' %}" class="btn btn-glass px-4">
+        <i class="bi bi-plus-lg me-2"></i>Submit New Report
+    </a>
+    {% endif %}
+</div>
+
+<div class="card glass-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 custom-table">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Type</th>
+                        <th>Title</th>
+                        <th>Submitted By</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr class="align-middle">
+                        <td class="ps-4 text-white-50">{{ report.submitted_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ report.get_report_type_display }}</span>
+                        </td>
+                        <td class="fw-medium">{{ report.title }}</td>
+                        <td>{{ report.submitted_by.username }}</td>
+                        <td>
+                            {% if report.status == 'pending' %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                            {% elif report.status == 'accountant_approved' %}
+                                <span class="badge bg-info text-dark"><i class="bi bi-check2-circle me-1"></i>Accountant Approved</span>
+                            {% elif report.status == 'admin_approved' %}
+                                <span class="badge bg-success"><i class="bi bi-check-all me-1"></i>Final Approved</span>
+                            {% else %}
+                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <!-- View/Action buttons based on role and status -->
+                            {% if report.status == 'pending' %}
+                                {% if request.user.role == 'accountant' or request.user.is_admin %}
+                                    <a href="{% url 'users:report_accountant_approve' report.pk %}" class="btn btn-sm btn-outline-info me-2">Review</a>
+                                {% endif %}
+                            {% endif %}
+
+                            {% if request.user.role == 'admin' and report.status == 'accountant_approved' %}
+                                <a href="{% url 'users:report_admin_approve' report.pk %}" class="btn btn-sm btn-outline-success me-2">Finalize</a>
+                            {% endif %}
+                            
+                            {% if request.user.role == 'admin' and report.status in 'pending,accountant_approved' %}
+                                <a href="{% url 'users:report_reject' report.pk %}" class="btn btn-sm btn-outline-danger">Reject</a>
+                            {% elif request.user.role == 'accountant' and report.status == 'pending' %}
+                                <a href="{% url 'users:report_reject' report.pk %}" class="btn btn-sm btn-outline-danger">Reject</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-white-50">
+                            <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
+                            No reports found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

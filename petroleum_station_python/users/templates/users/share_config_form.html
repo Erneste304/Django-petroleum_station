@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Share Configuration - Petroleum Station{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card glass-card border-0 shadow-lg mt-5">
+            <div class="card-header border-bottom border-white border-opacity-10 p-4">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-graph-up-arrow text-info me-2"></i>Global Share Settings</h4>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-white-50 small mb-4">Set the current market price for shares and the commission percentage for sell operations.</p>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-white-50">Current Share Price (RWF)</label>
+                        {{ form.current_price }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-white-50">Sell Commission Percentage (Decimal, e.g., 0.0001 for 0.01%)</label>
+                        {{ form.commission_percentage }}
+                    </div>
+                    
+                    <div class="d-flex gap-3 mt-5">
+                        <a href="{% url 'users:dashboard' %}" class="btn btn-outline-secondary w-100 py-3 fw-bold">Cancel</a>
+                        <button type="submit" class="btn btn-info text-dark w-100 py-3 fw-bold shadow-sm">Save Configuration</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

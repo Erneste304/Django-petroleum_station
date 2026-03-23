@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load math_filters %}
+
+{% block title %}User Profile - Petroleum Station{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="glass-card p-5">
+            <div class="text-center mb-5">
+                <div class="display-1 text-info mb-3">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <h2 class="fw-bold">{{ user.username }}'s Profile</h2>
+                <span class="badge bg-info text-dark px-3 py-2 rounded-pill">{{ user.get_role_display|default:user.role|title }}</span>
+            </div>
+
+            <div class="row g-4 mt-2">
+                <div class="col-md-12">
+                    <form method="POST" class="glass-card p-4 border border-secondary rounded">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-white-50 small mb-1">First Name</label>
+                                {{ form.first_name }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-white-50 small mb-1">Last Name</label>
+                                {{ form.last_name }}
+                            </div>
+                            <div class="col-md-12">
+                                <label class="text-white-50 small mb-1">Email Address</label>
+                                {{ form.email }}
+                            </div>
+                            <div class="col-md-12 mt-4">
+                                <button type="submit" class="btn btn-info w-100 py-3 fw-bold">Update Profile Information</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-4 p-4 glass-card border border-secondary rounded overflow-hidden">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Security & Access</h5>
+                        <p class="text-white-50 small mb-0">Role: <span class="text-info">{{ user.get_role_display|default:user.role|title }}</span></p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'users:logout' %}" class="btn btn-danger px-4"><i class="bi bi-box-arrow-right me-2"></i>Logout</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-5 text-center">
+                <a href="{% url 'users:dashboard' %}" class="btn btn-outline-info px-4">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
