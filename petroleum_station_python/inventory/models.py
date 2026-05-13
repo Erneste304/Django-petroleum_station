@@ -52,7 +52,7 @@ class FuelDelivery(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     tank = models.ForeignKey(Tank, on_delete=models.CASCADE)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
-    delivery_date = models.DateTimeField(auto_now_add=True)
+    delivery_date = models.DateField(auto_now_add=True)
 
     class Meta:
         db_table = 'fuel_delivery'

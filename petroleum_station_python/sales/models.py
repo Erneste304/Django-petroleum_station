@@ -10,7 +10,7 @@ class Sale(models.Model):
     pump = models.ForeignKey(Pump, on_delete=models.CASCADE)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    sale_date = models.DateTimeField(auto_now_add=True)
+    sale_date = models.DateField(auto_now_add=True)
 
     class Meta:
         db_table = 'sale'
@@ -29,7 +29,7 @@ class Payment(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_date = models.DateTimeField(auto_now_add=True)
+    payment_date = models.DateField(auto_now_add=True)
     status = models.CharField(max_length=20, default='Paid')
 
     class Meta:

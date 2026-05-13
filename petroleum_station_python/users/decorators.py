@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from functools import wraps
 
 
@@ -14,7 +14,6 @@ def role_required(*roles):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
             if not request.user.is_authenticated:
-                from django.shortcuts import redirect
                 return redirect('users:login')
             user_role = getattr(request.user, 'role', None)
             if user_role not in roles and not request.user.is_superuser:

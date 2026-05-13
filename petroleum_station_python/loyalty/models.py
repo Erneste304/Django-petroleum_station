@@ -22,7 +22,7 @@ class LoyaltyRedemption(models.Model):
     )
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     reward = models.ForeignKey(LoyaltyReward, on_delete=models.CASCADE)
-    redeemed_date = models.DateTimeField(auto_now_add=True)
+    redeemed_date = models.DateField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
 
     class Meta:

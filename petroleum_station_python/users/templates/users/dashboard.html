@@ -140,7 +140,7 @@
                             <td>#{{ sale.sale_id }}</td>
                             <td>{{ sale.quantity }} L</td>
                             <td>{{ sale.total_amount }} RWF</td>
-                            <td>{{ sale.sale_date|date:"M d, H:i" }}</td>
+                            <td>{{ sale.sale_date|date:"M d" }}</td>
                         </tr>
                         {% empty %}
                         <tr>

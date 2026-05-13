@@ -4,7 +4,9 @@ from .forms import FuelDeliveryForm, FuelPriceForm, TankForm
 from users.decorators import role_required
 from django.utils import timezone
 from django.contrib import messages
+from django.db import transaction
 from users.models import AuditLog
+
 
 @role_required('admin', 'accountant', 'staff', 'partner')
 def fuel_status(request):
@@ -17,22 +19,23 @@ def fuel_status(request):
         'pumps': pumps
     })
 
+
 @role_required('admin', 'staff')
 def record_delivery(request):
     """Record a new fuel delivery, update tank stock."""
     if request.method == 'POST':
         form = FuelDeliveryForm(request.POST)
         if form.is_valid():
-            delivery = form.save(commit=False)
-            # Update tank stock
-            tank = delivery.tank
-            old_stock = tank.current_stock
-            tank.current_stock += delivery.quantity
-            if tank.current_stock > tank.capacity:
-                tank.current_stock = tank.capacity
-            tank.save(update_fields=['current_stock'])
-            delivery.save()
-            
+            with transaction.atomic():
+                delivery = form.save()
+                tank = delivery.tank
+                old_stock = tank.current_stock
+
+                # Update stock safely
+                tank.current_stock = min(
+                    tank.current_stock + delivery.quantity, tank.capacity)
+                tank.save(update_fields=['current_stock'])
+
             # Audit the stock update
             AuditLog.objects.create(
                 model_name='Tank',
@@ -42,12 +45,14 @@ def record_delivery(request):
                 new_data={'current_stock': str(tank.current_stock)},
                 timestamp=timezone.now()
             )
-            
-            messages.success(request, f"Recorded {delivery.quantity}L delivery to {tank}.")
+
+            messages.success(
+                request, f"Recorded {delivery.quantity}L delivery to {tank}.")
             return redirect('inventory:fuel_status')
     else:
         form = FuelDeliveryForm()
     return render(request, 'inventory/delivery_form.html', {'form': form, 'title': 'Record Fuel Delivery'})
+
 
 @role_required('admin', 'accountant')
 def update_price(request, pk):
@@ -63,6 +68,7 @@ def update_price(request, pk):
         form = FuelPriceForm(instance=fuel)
     return render(request, 'inventory/update_price_form.html', {'form': form, 'fuel': fuel})
 
+
 @role_required('admin')
 def tank_create(request):
     if request.method == 'POST':
@@ -73,7 +79,8 @@ def tank_create(request):
                 model_name='Tank',
                 object_id=str(tank.pk),
                 changed_by=request.user,
-                new_data={'fuel': tank.fuel.fuel_name, 'capacity': str(tank.capacity), 'current_stock': str(tank.current_stock)}
+                new_data={'fuel': tank.fuel.fuel_name, 'capacity': str(
+                    tank.capacity), 'current_stock': str(tank.current_stock)}
             )
             messages.success(request, "Tank created successfully.")
             return redirect('inventory:fuel_status')
@@ -81,15 +88,18 @@ def tank_create(request):
         form = TankForm()
     return render(request, 'inventory/tank_form.html', {'form': form, 'title': 'Add New Tank'})
 
+
 @role_required('admin')
 def tank_update(request, pk):
     tank = get_object_or_404(Tank, pk=pk)
     if request.method == 'POST':
-        old_data = {'capacity': str(tank.capacity), 'current_stock': str(tank.current_stock)}
+        old_data = {'capacity': str(tank.capacity),
+                    'current_stock': str(tank.current_stock)}
         form = TankForm(request.POST, instance=tank)
         if form.is_valid():
             tank = form.save()
-            new_data = {'capacity': str(tank.capacity), 'current_stock': str(tank.current_stock)}
+            new_data = {'capacity': str(
+                tank.capacity), 'current_stock': str(tank.current_stock)}
             AuditLog.objects.create(
                 model_name='Tank',
                 object_id=str(tank.pk),
@@ -102,6 +112,7 @@ def tank_update(request, pk):
     else:
         form = TankForm(instance=tank)
     return render(request, 'inventory/tank_form.html', {'form': form, 'title': 'Edit Tank'})
+
 
 @role_required('admin')
 def tank_delete(request, pk):

@@ -31,7 +31,7 @@
                     <td>{{ sale.customer.name|default:"Walking Customer" }}</td>
                     <td>{{ sale.quantity }} L</td>
                     <td>{{ sale.total_amount }} RWF</td>
-                    <td>{{ sale.sale_date|date:"Y-m-d H:i" }}</td>
+                    <td>{{ sale.sale_date|date:"Y-m-d" }}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-info me-1" type="button" data-bs-toggle="collapse" data-bs-target="#saleDetail{{ sale.sale_id }}">
                             <i class="bi bi-eye"></i> View
